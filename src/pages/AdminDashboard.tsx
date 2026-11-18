@@ -2830,23 +2830,97 @@ export default function AdminDashboard() {
                             </div>
                           </div>
 
-                          {/* Removed Theme Selection Block */}
+                          {/* Homepage SEO Settings */}
+                          <div className="md:col-span-2 border-t border-[#f0f0f1] pt-4">
+                            <h2 className="font-bold text-[#1d2327] text-sm mb-4">🔍 Homepage SEO</h2>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs font-semibold text-[#1d2327] mb-1">Homepage Meta Title</label>
+                                <input type="text" value={settings.homepage_meta_title || ""}
+                                  onChange={e => setSettings({ ...settings, homepage_meta_title: e.target.value })}
+                                  placeholder="Luxury Airport Transfers & Chauffeur Service UK | TravelLuxx"
+                                  className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-semibold text-[#1d2327] mb-1">Homepage Meta Description</label>
+                                <textarea rows={3} value={settings.homepage_meta_description || ""}
+                                  onChange={e => setSettings({ ...settings, homepage_meta_description: e.target.value })}
+                                  placeholder="Book premium airport transfers and luxury chauffeur services..."
+                                  className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* OG / Social Tags */}
+                          <div className="md:col-span-2 border-t border-[#f0f0f1] pt-4">
+                            <h2 className="font-bold text-[#1d2327] text-sm mb-4">📢 Open Graph / Social Tags</h2>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs font-semibold text-[#1d2327] mb-1">OG Title</label>
+                                <input type="text" value={settings.og_title || ""}
+                                  onChange={e => setSettings({ ...settings, og_title: e.target.value })}
+                                  placeholder="Luxury Airport Transfers & Chauffeur Service UK | TravelLuxx"
+                                  className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-semibold text-[#1d2327] mb-1">OG Description</label>
+                                <textarea rows={2} value={settings.og_description || ""}
+                                  onChange={e => setSettings({ ...settings, og_description: e.target.value })}
+                                  placeholder="Book premium airport transfers..."
+                                  className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-semibold text-[#1d2327] mb-1">OG Image URL</label>
+                                <input type="text" value={settings.og_image || ""}
+                                  onChange={e => setSettings({ ...settings, og_image: e.target.value })}
+                                  placeholder="https://travelluxx.co.uk/og-image.jpg"
+                                  className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                                <p className="text-[#646970] text-[10px] mt-1">Recommended: 1200×630 px. Shown when shared on Facebook, Twitter, WhatsApp, etc.</p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {settingsTab === "connectors" && (
-                      <div className="space-y-4">
-                        <h2 className="font-bold text-[#1d2327] text-sm mb-4 pb-2 border-b border-[#f0f0f1] flex items-center gap-2">
-                          💳 Mollie Payment Gateway
-                        </h2>
+                      <div className="space-y-6">
                         <div>
-                          <label className="block text-xs font-semibold text-[#1d2327] mb-1">Mollie API Key (Live / Test)</label>
-                          <input type="password" value={settings.mollie_api_key || ""}
-                            onChange={e => setSettings({ ...settings, mollie_api_key: e.target.value })}
-                            placeholder="live_... or test_..."
-                            className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-[#2271b1] bg-white text-black" />
-                          <p className="text-[#646970] text-[10px] mt-1">This updates your local .env file MOLLIE_API_KEY automatically.</p>
+                          <h2 className="font-bold text-[#1d2327] text-sm mb-4 pb-2 border-b border-[#f0f0f1] flex items-center gap-2">
+                            💳 Mollie Payment Gateway
+                          </h2>
+                          <div>
+                            <label className="block text-xs font-semibold text-[#1d2327] mb-1">Mollie API Key (Live / Test)</label>
+                            <input type="password" value={settings.mollie_api_key || ""}
+                              onChange={e => setSettings({ ...settings, mollie_api_key: e.target.value })}
+                              placeholder="live_... or test_..."
+                              className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                            <p className="text-[#646970] text-[10px] mt-1">This updates your local .env file MOLLIE_API_KEY automatically.</p>
+                          </div>
+                        </div>
+
+                        <div className="border-t border-[#f0f0f1] pt-4">
+                          <h2 className="font-bold text-[#1d2327] text-sm mb-4 pb-2 border-b border-[#f0f0f1] flex items-center gap-2">
+                            ⭐ Google My Business Reviews
+                          </h2>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs font-semibold text-[#1d2327] mb-1">GMB Place ID</label>
+                              <input type="text" value={settings.gmb_place_id || ""}
+                                onChange={e => setSettings({ ...settings, gmb_place_id: e.target.value })}
+                                placeholder="ChIJ..."
+                                className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                              <p className="text-[#646970] text-[10px] mt-1">Find your Place ID at: developers.google.com/maps/documentation/javascript/examples/places-placeid-finder</p>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-[#1d2327] mb-1">Google Places API Key</label>
+                              <input type="password" value={settings.gmb_api_key || ""}
+                                onChange={e => setSettings({ ...settings, gmb_api_key: e.target.value })}
+                                placeholder="AIza..."
+                                className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                              <p className="text-[#646970] text-[10px] mt-1">Enable Places API in Google Cloud Console. Reviews sync automatically on each page load.</p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}

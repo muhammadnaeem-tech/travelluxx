@@ -63,6 +63,7 @@ export default function RenaxLayout({
   const officeAddr = settings?.office_address || "Shirley B90 Shirley, Solihull, West Midlands, UK";
 
   const [pricing, setPricing] = useState<any>(null);
+  const [gmbReviews, setGmbReviews] = useState<any[]>([]);
   const [activeFleetTab, setActiveFleetTab] = useState<"Economy" | "Luxury" | "Family">("Luxury");
   const [bgImage, setBgImage] = useState<string>(() => {
     const customSetting = settings?.hero_image || settings?.heroImage;
@@ -74,6 +75,13 @@ export default function RenaxLayout({
       .then(res => res.json())
       .then(data => setPricing(data))
       .catch(err => console.error("Failed to fetch fleet pricing:", err));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/reviews")
+      .then(res => res.json())
+      .then(data => { if (data.reviews && data.reviews.length > 0) setGmbReviews(data.reviews.slice(0, 3)); })
+      .catch(() => {});
   }, []);
 
   const formattedPhone = whatsappNum.startsWith("44") 
@@ -457,77 +465,43 @@ export default function RenaxLayout({
         </div>
       </section>
 
-      {/* IX. TESTIMONIALS / WHAT CLIENTS SAY (RENAX DEMO 12 ACCURATE STYLE) */}
-      <section className="py-24 bg-[#0a0b0e] border-t border-slate-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-emerald-400 text-xs tracking-widest uppercase block mb-3 font-bold">Testimonials</span>
-            <h2 className="text-3xl font-bold text-white uppercase">What Clients Say</h2>
+      {/* IX. TESTIMONIALS / WHAT CLIENTS SAY — GMB synced */}
+      <section className=”py-24 bg-[#0a0b0e] border-t border-slate-900”>
+        <div className=”max-w-7xl mx-auto px-4 sm:px-6 lg:px-8”>
+          <div className=”text-center max-w-2xl mx-auto mb-16”>
+            <span className=”text-emerald-400 text-xs tracking-widest uppercase block mb-3 font-bold”>Testimonials</span>
+            <h2 className=”text-3xl font-bold text-white uppercase”>What Clients Say</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Review 1 */}
-            <div className="bg-[#0e1017] border border-slate-800/60 p-8 rounded-3xl relative overflow-hidden shadow-lg space-y-6">
-              <span className="text-emerald-400 font-serif text-5xl leading-none block select-none">“</span>
-              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed font-light italic">
-                "Outstanding service from Heathrow. The Mercedes S-class was immaculate and the driver was prompt, professional, and took care of all our luggage. Highly recommended for corporate transfers."
-              </p>
-              <div className="border-t border-slate-850 pt-4 flex justify-between items-center">
-                <div>
-                  <h4 className="text-sm font-bold text-white">David Miller</h4>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">Corporate Client</p>
-                </div>
-                <div className="flex space-x-0.5 text-emerald-400 shrink-0">
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                </div>
-              </div>
-            </div>
-
-            {/* Review 2 */}
-            <div className="bg-[#0e1017] border border-slate-800/60 p-8 rounded-3xl relative overflow-hidden shadow-lg space-y-6">
-              <span className="text-emerald-400 font-serif text-5xl leading-none block select-none">“</span>
-              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed font-light italic">
-                "Booked the MPV class for our family vacation to Gatwick. Plenty of space for 6 suitcases and our children. The driver was extremely polite and monitored our flights for our return."
-              </p>
-              <div className="border-t border-slate-850 pt-4 flex justify-between items-center">
-                <div>
-                  <h4 className="text-sm font-bold text-white">Sarah Jenkins</h4>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">Family Transfer</p>
-                </div>
-                <div className="flex space-x-0.5 text-emerald-400 shrink-0">
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <Star className="w-3.5 h-3.5 fill-current" />
+          <div className=”grid grid-cols-1 md:grid-cols-3 gap-8”>
+            {(gmbReviews.length > 0 ? gmbReviews : [
+              { author_name: “David Miller”, rating: 5, text: “Outstanding service from Heathrow. The Mercedes S-class was immaculate and the driver was prompt, professional, and took care of all our luggage. Highly recommended for corporate transfers.”, relative_time_description: “Corporate Client” },
+              { author_name: “Sarah Jenkins”, rating: 5, text: “Booked the MPV class for our family vacation to Gatwick. Plenty of space for 6 suitcases and our children. The driver was extremely polite and monitored our flights for our return.”, relative_time_description: “Family Transfer” },
+              { author_name: “James Sterling”, rating: 5, text: “The fixed price booking was exactly as quoted, without any hidden charges. The best chauffeur service in Solihull. Will certainly use Travelluxx for all my executive trips.”, relative_time_description: “Executive Commuter” }
+            ]).map((review: any, idx: number) => (
+              <div key={idx} className=”bg-[#0e1017] border border-slate-800/60 p-8 rounded-3xl relative overflow-hidden shadow-lg space-y-6”>
+                <span className=”text-emerald-400 font-serif text-5xl leading-none block select-none”>”</span>
+                <p className=”text-slate-300 text-xs sm:text-sm leading-relaxed font-light italic”>
+                  “{review.text}”
+                </p>
+                <div className=”border-t border-slate-800 pt-4 flex justify-between items-center”>
+                  <div className=”flex items-center gap-3”>
+                    {review.profile_photo_url ? (
+                      <img src={review.profile_photo_url} alt={review.author_name} className=”w-8 h-8 rounded-full object-cover shrink-0” />
+                    ) : null}
+                    <div>
+                      <p className=”text-sm font-bold text-white”>{review.author_name}</p>
+                      <p className=”text-[10px] text-slate-500 uppercase tracking-widest mt-0.5”>{review.relative_time_description || “Google Review”}</p>
+                    </div>
+                  </div>
+                  <div className=”flex space-x-0.5 text-emerald-400 shrink-0”>
+                    {Array.from({ length: Math.min(review.rating || 5, 5) }).map((_, i) => (
+                      <Star key={i} className=”w-3.5 h-3.5 fill-current” />
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Review 3 */}
-            <div className="bg-[#0e1017] border border-slate-800/60 p-8 rounded-3xl relative overflow-hidden shadow-lg space-y-6">
-              <span className="text-emerald-400 font-serif text-5xl leading-none block select-none">“</span>
-              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed font-light italic">
-                "The fixed price booking was exactly as quoted, without any hidden charges. The best chauffeur service in Solihull. Will certainly use Travelluxx for all my executive trips."
-              </p>
-              <div className="border-t border-slate-850 pt-4 flex justify-between items-center">
-                <div>
-                  <h4 className="text-sm font-bold text-white">James Sterling</h4>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">Executive Commuter</p>
-                </div>
-                <div className="flex space-x-0.5 text-emerald-400 shrink-0">
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>

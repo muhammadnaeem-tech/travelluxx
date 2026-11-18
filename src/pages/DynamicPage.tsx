@@ -49,6 +49,23 @@ export default function DynamicPage() {
       const isNoIndex = !!settings?.search_engine_visibility || !!page.noIndexNoFollow;
       robotsMeta.setAttribute("content", isNoIndex ? "noindex, nofollow" : "index, follow");
 
+      // Update OG and Twitter meta tags
+      const updateMetaProp = (prop: string, content: string) => {
+        let el = document.querySelector(`meta[property='${prop}']`);
+        if (el) {
+          el.setAttribute("content", content);
+        } else {
+          el = document.createElement("meta");
+          el.setAttribute("property", prop);
+          el.setAttribute("content", content);
+          document.head.appendChild(el);
+        }
+      };
+      updateMetaProp("og:title", page.metaTitle || page.title || "");
+      updateMetaProp("og:description", page.metaDescription || "");
+      updateMetaProp("twitter:title", page.metaTitle || page.title || "");
+      updateMetaProp("twitter:description", page.metaDescription || "");
+
       // Inject JSON-LD Schema
       const existingScript = document.getElementById("jsonld-page-schema");
       if (existingScript) existingScript.remove();

@@ -43,6 +43,7 @@ function PublicLandingPage() {
 
   useEffect(() => {
     if (settings) {
+      // Robots meta
       let robotsMeta = document.querySelector("meta[name='robots']");
       if (!robotsMeta) {
         robotsMeta = document.createElement("meta");
@@ -50,6 +51,44 @@ function PublicLandingPage() {
         document.head.appendChild(robotsMeta);
       }
       robotsMeta.setAttribute("content", settings.search_engine_visibility ? "noindex, nofollow" : "index, follow");
+
+      // Homepage meta title
+      if (settings.homepage_meta_title) {
+        document.title = settings.homepage_meta_title;
+      }
+
+      // Homepage meta description — find existing tag in index.html and update it
+      const metaDesc = document.querySelector("meta[name='description']");
+      if (settings.homepage_meta_description) {
+        if (metaDesc) {
+          metaDesc.setAttribute("content", settings.homepage_meta_description);
+        } else {
+          const newMeta = document.createElement("meta");
+          newMeta.setAttribute("name", "description");
+          newMeta.setAttribute("content", settings.homepage_meta_description);
+          document.head.appendChild(newMeta);
+        }
+      }
+
+      // OG / Social tags — update existing index.html tags, don't create duplicates
+      const updateMetaProp = (prop: string, content: string) => {
+        const el = document.querySelector(`meta[property='${prop}']`);
+        if (el) el.setAttribute("content", content);
+      };
+      const ogTitle = settings.og_title || settings.homepage_meta_title || "";
+      const ogDesc = settings.og_description || settings.homepage_meta_description || "";
+      if (ogTitle) {
+        updateMetaProp("og:title", ogTitle);
+        updateMetaProp("twitter:title", ogTitle);
+      }
+      if (ogDesc) {
+        updateMetaProp("og:description", ogDesc);
+        updateMetaProp("twitter:description", ogDesc);
+      }
+      if (settings.og_image) {
+        updateMetaProp("og:image", settings.og_image);
+        updateMetaProp("twitter:image", settings.og_image);
+      }
     }
   }, [settings]);
 

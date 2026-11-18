@@ -334,7 +334,14 @@ function getCurrentWebsiteSettings() {
     homepage_page_id: "",
     posts_page_id: "",
     search_engine_visibility: false,
-    active_theme: "default"
+    active_theme: "default",
+    homepage_meta_title: "",
+    homepage_meta_description: "",
+    og_title: "",
+    og_description: "",
+    og_image: "",
+    gmb_place_id: "",
+    gmb_api_key: ""
   };
   try {
     const webSettingsPath = path.join(process.cwd(), "website_settings.json");
@@ -1520,6 +1527,41 @@ app.delete("/api/admin/inquiries/:id", async (req, res) => {
   inquiries = inquiries.filter(i => i.id !== id);
   writeInquiries(inquiries);
   return res.json({ success: true });
+});
+
+app.get("/api/reviews", async (req, res) => {
+  try {
+    await connectToDatabase();
+    await syncSettingsFromDb();
+  } catch (e) {}
+
+  const ws = getCurrentWebsiteSettings() as any;
+  const placeId = ws.gmb_place_id;
+  const apiKey = ws.gmb_api_key || process.env.GOOGLE_PLACES_API_KEY;
+
+  if (!placeId || !apiKey) {
+    return res.json({ reviews: [] });
+  }
+
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=reviews,rating,user_ratings_total&key=${apiKey}&language=en&reviews_sort=newest`
+    );
+    const data = await response.json() as any;
+
+    if (data.status === "OK" && data.result?.reviews) {
+      return res.json({
+        reviews: data.result.reviews,
+        rating: data.result.rating,
+        total: data.result.user_ratings_total
+      });
+    }
+    console.warn("GMB reviews fetch failed:", data.status, data.error_message);
+    return res.json({ reviews: [] });
+  } catch (err: any) {
+    console.error("GMB reviews error:", err.message);
+    return res.json({ reviews: [] });
+  }
 });
 
 app.get("/api/pricing", async (req, res) => {

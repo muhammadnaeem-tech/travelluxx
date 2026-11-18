@@ -49,6 +49,25 @@ export default function BlogPostDetail() {
       const isNoIndex = !!settings?.search_engine_visibility || !!post.noIndexNoFollow;
       robotsMeta.setAttribute("content", isNoIndex ? "noindex, nofollow" : "index, follow");
 
+      // Update OG and Twitter meta tags
+      const updateMetaProp = (prop: string, content: string) => {
+        let el = document.querySelector(`meta[property='${prop}']`);
+        if (el) {
+          el.setAttribute("content", content);
+        } else {
+          el = document.createElement("meta");
+          el.setAttribute("property", prop);
+          el.setAttribute("content", content);
+          document.head.appendChild(el);
+        }
+      };
+      updateMetaProp("og:title", post.metaTitle || post.title || "");
+      updateMetaProp("og:description", post.metaDescription || post.excerpt || "");
+      if (post.image) updateMetaProp("og:image", post.image);
+      updateMetaProp("twitter:title", post.metaTitle || post.title || "");
+      updateMetaProp("twitter:description", post.metaDescription || post.excerpt || "");
+      if (post.image) updateMetaProp("twitter:image", post.image);
+
       // Inject JSON-LD Schema
       const existingScript = document.getElementById("jsonld-post-schema");
       if (existingScript) existingScript.remove();
@@ -175,7 +194,7 @@ export default function BlogPostDetail() {
                         key={idx} 
                         className="bg-white border border-slate-200/60 hover:border-emerald-200 p-5 rounded-xl transition duration-300 hover:shadow-md hover:shadow-emerald-600/5 group"
                       >
-                        <h4 className="font-sans text-base font-semibold text-slate-800 group-hover:text-emerald-700 transition duration-300 mb-2">{faq.question}</h4>
+                        <h3 className="font-sans text-base font-semibold text-slate-800 group-hover:text-emerald-700 transition duration-300 mb-2">{faq.question}</h3>
                         <p className="font-serif text-slate-600 text-sm md:text-base leading-relaxed">{faq.answer}</p>
                       </div>
                     ))}
