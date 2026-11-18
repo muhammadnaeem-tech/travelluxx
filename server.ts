@@ -341,7 +341,8 @@ function getCurrentWebsiteSettings() {
     og_description: "",
     og_image: "",
     gmb_place_id: "",
-    gmb_api_key: ""
+    gmb_api_key: "",
+    google_maps_url: ""
   };
   try {
     const webSettingsPath = path.join(process.cwd(), "website_settings.json");
@@ -1561,6 +1562,38 @@ app.get("/api/reviews", async (req, res) => {
   } catch (err: any) {
     console.error("GMB reviews error:", err.message);
     return res.json({ reviews: [] });
+  }
+});
+
+app.post("/api/admin/sync-reviews", async (req, res) => {
+  try {
+    await connectToDatabase();
+    await syncSettingsFromDb();
+  } catch (e) {}
+
+  const ws = getCurrentWebsiteSettings() as any;
+  const placeId = ws.gmb_place_id;
+  const apiKey = ws.gmb_api_key || process.env.GOOGLE_PLACES_API_KEY;
+
+  if (!placeId || !apiKey) {
+    return res.json({ success: false, message: "GMB Place ID and API Key are required. Please save them in Settings > Connectors first." });
+  }
+
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=reviews,rating,user_ratings_total&key=${apiKey}&language=en&reviews_sort=newest`
+    );
+    const data = await response.json() as any;
+
+    if (data.status === "OK" && data.result?.reviews) {
+      return res.json({
+        success: true,
+        message: `Synced ${data.result.reviews.length} reviews from Google (Rating: ${data.result.rating} / ${data.result.user_ratings_total} total).`
+      });
+    }
+    return res.json({ success: false, message: `Google API returned: ${data.status}${data.error_message ? " — " + data.error_message : ""}` });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: "Sync failed: " + err.message });
   }
 });
 

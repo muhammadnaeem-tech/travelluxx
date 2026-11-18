@@ -11,6 +11,7 @@ const FleetCatalog = lazy(() => import("./components/FleetCatalog"));
 const AirportsGrid = lazy(() => import("./components/AirportsGrid"));
 const ContactForm = lazy(() => import("./components/ContactForm"));
 const RenaxLayout = lazy(() => import("./components/RenaxLayout"));
+const GmbReviews = lazy(() => import("./components/GmbReviews"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const BlogList = lazy(() => import("./pages/BlogList"));
 const BlogPostDetail = lazy(() => import("./pages/BlogPostDetail"));
@@ -44,55 +45,67 @@ function PublicLandingPage() {
   }, [settings]);
 
   useEffect(() => {
-    if (settings) {
-      // Robots meta
-      let robotsMeta = document.querySelector("meta[name='robots']");
-      if (!robotsMeta) {
-        robotsMeta = document.createElement("meta");
-        robotsMeta.setAttribute("name", "robots");
-        document.head.appendChild(robotsMeta);
-      }
-      robotsMeta.setAttribute("content", settings.search_engine_visibility ? "noindex, nofollow" : "index, follow");
+    if (!settings) return;
 
-      // Homepage meta title
-      if (settings.homepage_meta_title) {
-        document.title = settings.homepage_meta_title;
-      }
-
-      // Homepage meta description — find existing tag in index.html and update it
-      const metaDesc = document.querySelector("meta[name='description']");
-      if (settings.homepage_meta_description) {
-        if (metaDesc) {
-          metaDesc.setAttribute("content", settings.homepage_meta_description);
-        } else {
-          const newMeta = document.createElement("meta");
-          newMeta.setAttribute("name", "description");
-          newMeta.setAttribute("content", settings.homepage_meta_description);
-          document.head.appendChild(newMeta);
-        }
-      }
-
-      // OG / Social tags — update existing index.html tags, don't create duplicates
-      const updateMetaProp = (prop: string, content: string) => {
-        const el = document.querySelector(`meta[property='${prop}']`);
-        if (el) el.setAttribute("content", content);
-      };
-      const ogTitle = settings.og_title || settings.homepage_meta_title || "";
-      const ogDesc = settings.og_description || settings.homepage_meta_description || "";
-      if (ogTitle) {
-        updateMetaProp("og:title", ogTitle);
-        updateMetaProp("twitter:title", ogTitle);
-      }
-      if (ogDesc) {
-        updateMetaProp("og:description", ogDesc);
-        updateMetaProp("twitter:description", ogDesc);
-      }
-      if (settings.og_image) {
-        updateMetaProp("og:image", settings.og_image);
-        updateMetaProp("twitter:image", settings.og_image);
-      }
+    // Robots meta
+    let robotsMeta = document.querySelector("meta[name='robots']");
+    if (!robotsMeta) {
+      robotsMeta = document.createElement("meta");
+      robotsMeta.setAttribute("name", "robots");
+      document.head.appendChild(robotsMeta);
     }
-  }, [settings]);
+    robotsMeta.setAttribute("content", settings.search_engine_visibility ? "noindex, nofollow" : "index, follow");
+
+    // Pick meta title / description from page content (if page mode) or global settings
+    const isPageMode = settings.homepage_displays === "page";
+    const metaTitle = (isPageMode && homepageContent?.metaTitle)
+      ? homepageContent.metaTitle
+      : (settings.homepage_meta_title || "");
+    const metaDesc = (isPageMode && homepageContent?.metaDescription)
+      ? homepageContent.metaDescription
+      : (settings.homepage_meta_description || "");
+    const ogTitle = settings.og_title || metaTitle;
+    const ogDesc = settings.og_description || metaDesc;
+    const ogImage = settings.og_image || "";
+
+    if (metaTitle) document.title = metaTitle;
+
+    // Helper: update or create a <meta name="x"> tag
+    const setMetaName = (name: string, content: string) => {
+      let el = document.querySelector(`meta[name='${name}']`) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute("name", name);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", content);
+    };
+
+    // Helper: update or create a <meta property="x"> tag
+    const setMetaProp = (prop: string, content: string) => {
+      let el = document.querySelector(`meta[property='${prop}']`) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute("property", prop);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", content);
+    };
+
+    if (metaDesc) setMetaName("description", metaDesc);
+    if (ogTitle) {
+      setMetaProp("og:title", ogTitle);
+      setMetaProp("twitter:title", ogTitle);
+    }
+    if (ogDesc) {
+      setMetaProp("og:description", ogDesc);
+      setMetaProp("twitter:description", ogDesc);
+    }
+    if (ogImage) {
+      setMetaProp("og:image", ogImage);
+      setMetaProp("twitter:image", ogImage);
+    }
+  }, [settings, homepageContent]);
 
   // Smooth scroll handler
   const handleScrollTo = (elementId: string) => {
@@ -217,6 +230,10 @@ function PublicLandingPage() {
 
         <Suspense fallback={null}>
           <AirportsGrid onSelectTransfer={handleSelectTransferPreset} />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <GmbReviews settings={settings} />
         </Suspense>
 
         <Suspense fallback={null}>

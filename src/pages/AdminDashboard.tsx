@@ -2900,25 +2900,51 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="border-t border-[#f0f0f1] pt-4">
-                          <h2 className="font-bold text-[#1d2327] text-sm mb-4 pb-2 border-b border-[#f0f0f1] flex items-center gap-2">
-                            ⭐ Google My Business Reviews
-                          </h2>
+                          <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#f0f0f1]">
+                            <h2 className="font-bold text-[#1d2327] text-sm flex items-center gap-2">
+                              ⭐ Google Business Profile &amp; Reviews Integration
+                            </h2>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  const r = await fetch("/api/admin/sync-reviews", { method: "POST" });
+                                  const d = await r.json();
+                                  alert(d.message || "Reviews refreshed!");
+                                } catch {
+                                  alert("Sync failed — check your API key and Place ID.");
+                                }
+                              }}
+                              className="bg-[#2271b1] hover:bg-[#135e96] text-white px-3 py-1.5 rounded-sm text-xs font-semibold flex items-center gap-1.5 transition shrink-0"
+                            >
+                              ✦ Sync Now (Refresh Reviews)
+                            </button>
+                          </div>
+                          <p className="text-[#646970] text-[11px] mb-3">Paste your Google Maps / Google Business Profile (GBP) link below. The homepage reviews section will automatically link to and fetch authentic customer reviews from this Google profile.</p>
                           <div className="space-y-3">
                             <div>
-                              <label className="block text-xs font-semibold text-[#1d2327] mb-1">GMB Place ID</label>
+                              <label className="block text-xs font-semibold text-[#1d2327] mb-1">Google Business Profile / Google Maps URL</label>
+                              <input type="text" value={settings.google_maps_url || ""}
+                                onChange={e => setSettings({ ...settings, google_maps_url: e.target.value })}
+                                placeholder="https://www.google.com/maps/place/YourBusiness/..."
+                                className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                              <p className="text-[#646970] text-[10px] mt-1">Example: https://maps.google.com/?cid=... or your business search URL.</p>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-[#1d2327] mb-1">Google Places API Key (Optional for live sync)</label>
+                              <input type="password" value={settings.gmb_api_key || ""}
+                                onChange={e => setSettings({ ...settings, gmb_api_key: e.target.value })}
+                                placeholder="AIza..."
+                                className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                              <p className="text-[#646970] text-[10px] mt-1">Enable Places API in Google Cloud Console.</p>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-[#1d2327] mb-1">Google Place ID (Optional)</label>
                               <input type="text" value={settings.gmb_place_id || ""}
                                 onChange={e => setSettings({ ...settings, gmb_place_id: e.target.value })}
                                 placeholder="ChIJ..."
                                 className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-[#2271b1] bg-white text-black" />
                               <p className="text-[#646970] text-[10px] mt-1">Find your Place ID at: developers.google.com/maps/documentation/javascript/examples/places-placeid-finder</p>
-                            </div>
-                            <div>
-                              <label className="block text-xs font-semibold text-[#1d2327] mb-1">Google Places API Key</label>
-                              <input type="password" value={settings.gmb_api_key || ""}
-                                onChange={e => setSettings({ ...settings, gmb_api_key: e.target.value })}
-                                placeholder="AIza..."
-                                className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-[#2271b1] bg-white text-black" />
-                              <p className="text-[#646970] text-[10px] mt-1">Enable Places API in Google Cloud Console. Reviews sync automatically on each page load.</p>
                             </div>
                           </div>
                         </div>
