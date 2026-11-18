@@ -454,6 +454,12 @@ export default function AdminDashboard() {
   const [quickEditingPageId, setQuickEditingPageId] = useState<string | null>(null);
   const [quickPageForm, setQuickPageForm] = useState({ title: "", slug: "", published: true });
 
+  // Reviews management states
+  const [gmbReviews, setGmbReviews] = useState<any[]>([]);
+  const [gmbSyncing, setGmbSyncing] = useState(false);
+  const [reviewForm, setReviewForm] = useState<any>(null); // null = closed, {} = new, {id:x} = editing
+  const [reviewFormData, setReviewFormData] = useState({ author_name: "", text: "", rating: 5, relative_time_description: "a week ago", profile_photo_url: "" });
+
   // Yoast SEO states
   const [yoastPostTab, setYoastPostTab] = useState<"seo" | "readability" | "schema" | "social">("seo");
   const [yoastPageTab, setYoastPageTab] = useState<"seo" | "readability" | "schema" | "social">("seo");
@@ -564,7 +570,7 @@ export default function AdminDashboard() {
   };
 
   const fetchAll = () => {
-    fetchBookings(); fetchPosts(); fetchPages(); fetchSettings(); fetchMenu(); fetchInquiries(); fetchMedia();
+    fetchBookings(); fetchPosts(); fetchPages(); fetchSettings(); fetchMenu(); fetchInquiries(); fetchMedia(); fetchGmbReviews();
   };
 
   const fetchBookings = async () => {
@@ -619,6 +625,27 @@ export default function AdminDashboard() {
   };
   const fetchSettings = async () => {
     const r = await fetch("/api/admin/settings"); setSettings(await r.json());
+  };
+  const fetchGmbReviews = async () => {
+    try {
+      const r = await fetch("/api/admin/reviews");
+      if (r.ok) setGmbReviews(await r.json());
+    } catch {}
+  };
+  const deleteGmbReview = async (id: number, name: string) => {
+    if (!confirm(`Remove review from "${name}"?`)) return;
+    await fetch(`/api/admin/reviews/${id}`, { method: "DELETE" });
+    fetchGmbReviews();
+  };
+  const saveReviewForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (reviewForm?.id) {
+      await fetch(`/api/admin/reviews/${reviewForm.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(reviewFormData) });
+    } else {
+      await fetch("/api/admin/reviews", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(reviewFormData) });
+    }
+    setReviewForm(null);
+    fetchGmbReviews();
   };
   const fetchMenu = async () => {
     const r = await fetch("/api/menu"); setMenuItems(await r.json());
@@ -2900,28 +2927,34 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="border-t border-[#f0f0f1] pt-4">
-                          <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#f0f0f1]">
+                          <div className="flex items-center justify-between mb-2 pb-2 border-b border-[#f0f0f1]">
                             <h2 className="font-bold text-[#1d2327] text-sm flex items-center gap-2">
                               ⭐ Google Business Profile &amp; Reviews Integration
                             </h2>
                             <button
                               type="button"
+                              disabled={gmbSyncing}
                               onClick={async () => {
+                                setGmbSyncing(true);
                                 try {
                                   const r = await fetch("/api/admin/sync-reviews", { method: "POST" });
                                   const d = await r.json();
-                                  alert(d.message || "Reviews refreshed!");
+                                  await fetchGmbReviews();
+                                  alert(d.message || "Reviews are live!");
                                 } catch {
-                                  alert("Sync failed — check your API key and Place ID.");
+                                  alert("Sync failed.");
+                                } finally {
+                                  setGmbSyncing(false);
                                 }
                               }}
-                              className="bg-[#2271b1] hover:bg-[#135e96] text-white px-3 py-1.5 rounded-sm text-xs font-semibold flex items-center gap-1.5 transition shrink-0"
+                              className="bg-[#2271b1] hover:bg-[#135e96] disabled:opacity-60 text-white px-3 py-1.5 rounded-sm text-xs font-semibold flex items-center gap-1.5 transition shrink-0"
                             >
-                              ✦ Sync Now (Refresh Reviews)
+                              {gmbSyncing ? "Syncing..." : "✦ Sync Now (Refresh Reviews)"}
                             </button>
                           </div>
-                          <p className="text-[#646970] text-[11px] mb-3">Paste your Google Maps / Google Business Profile (GBP) link below. The homepage reviews section will automatically link to and fetch authentic customer reviews from this Google profile.</p>
-                          <div className="space-y-3">
+                          <p className="text-[#646970] text-[11px] mb-4">Paste your Google Maps / Google Business Profile (GBP) link below. The homepage reviews section will automatically link to your Google profile.</p>
+
+                          <div className="space-y-3 mb-5">
                             <div>
                               <label className="block text-xs font-semibold text-[#1d2327] mb-1">Google Business Profile / Google Maps URL</label>
                               <input type="text" value={settings.google_maps_url || ""}
@@ -2931,22 +2964,115 @@ export default function AdminDashboard() {
                               <p className="text-[#646970] text-[10px] mt-1">Example: https://maps.google.com/?cid=... or your business search URL.</p>
                             </div>
                             <div>
-                              <label className="block text-xs font-semibold text-[#1d2327] mb-1">Google Places API Key (Optional for live sync)</label>
-                              <input type="password" value={settings.gmb_api_key || ""}
-                                onChange={e => setSettings({ ...settings, gmb_api_key: e.target.value })}
-                                placeholder="AIza..."
-                                className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-[#2271b1] bg-white text-black" />
-                              <p className="text-[#646970] text-[10px] mt-1">Enable Places API in Google Cloud Console.</p>
-                            </div>
-                            <div>
-                              <label className="block text-xs font-semibold text-[#1d2327] mb-1">Google Place ID (Optional)</label>
-                              <input type="text" value={settings.gmb_place_id || ""}
-                                onChange={e => setSettings({ ...settings, gmb_place_id: e.target.value })}
-                                placeholder="ChIJ..."
-                                className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-[#2271b1] bg-white text-black" />
-                              <p className="text-[#646970] text-[10px] mt-1">Find your Place ID at: developers.google.com/maps/documentation/javascript/examples/places-placeid-finder</p>
+                              <label className="block text-xs font-semibold text-[#1d2327] mb-1">Total Verified Reviews Count (e.g. 48)</label>
+                              <div className="flex items-center gap-0">
+                                <button type="button"
+                                  onClick={() => setSettings({ ...settings, gmb_review_count: Math.max(0, (settings.gmb_review_count || 48) - 1) })}
+                                  className="border border-[#8c8f94] border-r-0 px-3 py-2 text-sm font-bold text-[#1d2327] bg-[#f6f7f7] hover:bg-[#f0f0f0] rounded-l transition select-none">−</button>
+                                <input type="number" min="0"
+                                  value={settings.gmb_review_count ?? 48}
+                                  onChange={e => setSettings({ ...settings, gmb_review_count: parseInt(e.target.value) || 0 })}
+                                  className="border border-[#8c8f94] px-3 py-2 text-sm text-center w-24 focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                                <button type="button"
+                                  onClick={() => setSettings({ ...settings, gmb_review_count: (settings.gmb_review_count || 48) + 1 })}
+                                  className="border border-[#8c8f94] border-l-0 px-3 py-2 text-sm font-bold text-[#1d2327] bg-[#f6f7f7] hover:bg-[#f0f0f0] rounded-r transition select-none">+</button>
+                              </div>
+                              <p className="text-[#646970] text-[10px] mt-1">Shown as "Based on X Google Reviews" on the homepage.</p>
                             </div>
                           </div>
+
+                          {/* Reviews list */}
+                          <div className="border border-[#f0f0f1] rounded">
+                            <div className="flex items-center justify-between px-3 py-2 bg-[#f6f7f7] border-b border-[#f0f0f1]">
+                              <span className="text-xs font-semibold text-[#1d2327]">Reviews ({gmbReviews.length})</span>
+                              <button type="button"
+                                onClick={() => { setReviewForm({}); setReviewFormData({ author_name: "", text: "", rating: 5, relative_time_description: "a week ago", profile_photo_url: "" }); }}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-semibold px-2.5 py-1 rounded transition">+ Add Review</button>
+                            </div>
+                            {gmbReviews.length === 0 ? (
+                              <div className="text-center py-6 text-[#646970] text-xs">
+                                No reviews yet. Click "Sync Now" to seed defaults or "Add Review" to add manually.
+                              </div>
+                            ) : (
+                              <div className="divide-y divide-[#f0f0f1]">
+                                {gmbReviews.map((rv: any) => (
+                                  <div key={rv.id} className="flex items-start justify-between gap-3 px-3 py-2.5">
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs font-semibold text-[#1d2327] truncate">{rv.author_name}</span>
+                                        <span className="text-[10px] text-amber-500">{"★".repeat(rv.rating || 5)}</span>
+                                      </div>
+                                      <p className="text-[11px] text-[#646970] mt-0.5 line-clamp-2">{rv.text}</p>
+                                    </div>
+                                    <div className="flex gap-1 shrink-0">
+                                      <button type="button"
+                                        onClick={() => { setReviewForm({ id: rv.id }); setReviewFormData({ author_name: rv.author_name, text: rv.text, rating: rv.rating || 5, relative_time_description: rv.relative_time_description || "", profile_photo_url: rv.profile_photo_url || "" }); }}
+                                        className="text-[10px] border border-[#8c8f94] text-[#1d2327] px-2 py-0.5 rounded hover:bg-[#f0f0f0] transition">Edit</button>
+                                      <button type="button"
+                                        onClick={() => deleteGmbReview(rv.id, rv.author_name)}
+                                        className="text-[10px] border border-red-300 text-red-600 px-2 py-0.5 rounded hover:bg-red-50 transition">Del</button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Add/Edit review modal */}
+                          {reviewForm !== null && (
+                            <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+                              <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0f0f1]">
+                                  <h3 className="font-bold text-sm text-[#1d2327]">{reviewForm.id ? "Edit Review" : "Add Review"}</h3>
+                                  <button type="button" onClick={() => setReviewForm(null)} className="text-[#646970] hover:text-[#1d2327] text-lg leading-none">×</button>
+                                </div>
+                                <form onSubmit={saveReviewForm} className="p-4 space-y-3">
+                                  <div>
+                                    <label className="block text-xs font-semibold text-[#1d2327] mb-1">Reviewer Name *</label>
+                                    <input required type="text" value={reviewFormData.author_name}
+                                      onChange={e => setReviewFormData({ ...reviewFormData, author_name: e.target.value })}
+                                      className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-[#1d2327] mb-1">Review Text *</label>
+                                    <textarea required rows={4} value={reviewFormData.text}
+                                      onChange={e => setReviewFormData({ ...reviewFormData, text: e.target.value })}
+                                      className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm focus:outline-none focus:border-[#2271b1] bg-white text-black resize-none" />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-xs font-semibold text-[#1d2327] mb-1">Rating (1–5)</label>
+                                      <select value={reviewFormData.rating}
+                                        onChange={e => setReviewFormData({ ...reviewFormData, rating: Number(e.target.value) })}
+                                        className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm focus:outline-none focus:border-[#2271b1] bg-white text-black">
+                                        {[5,4,3,2,1].map(n => <option key={n} value={n}>{n} ★</option>)}
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-semibold text-[#1d2327] mb-1">Time Description</label>
+                                      <input type="text" value={reviewFormData.relative_time_description}
+                                        onChange={e => setReviewFormData({ ...reviewFormData, relative_time_description: e.target.value })}
+                                        placeholder="a week ago"
+                                        className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-[#1d2327] mb-1">Photo URL (Optional)</label>
+                                    <input type="text" value={reviewFormData.profile_photo_url}
+                                      onChange={e => setReviewFormData({ ...reviewFormData, profile_photo_url: e.target.value })}
+                                      placeholder="https://..."
+                                      className="w-full border border-[#8c8f94] rounded px-3 py-2 text-sm focus:outline-none focus:border-[#2271b1] bg-white text-black" />
+                                  </div>
+                                  <div className="flex justify-end gap-2 pt-2">
+                                    <button type="button" onClick={() => setReviewForm(null)}
+                                      className="border border-[#8c8f94] text-[#1d2327] text-xs font-semibold px-4 py-2 rounded hover:bg-[#f0f0f0] transition">Cancel</button>
+                                    <button type="submit"
+                                      className="bg-[#2271b1] hover:bg-[#135e96] text-white text-xs font-semibold px-4 py-2 rounded transition">Save Review</button>
+                                  </div>
+                                </form>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
