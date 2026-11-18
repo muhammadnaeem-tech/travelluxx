@@ -287,6 +287,7 @@ export default function RenaxLayout({
                 src={getCustomImage("about_showcase", transferPortImg)}
                 alt="Travelluxx Luxury Chauffeur"
                 className="w-full h-full object-cover opacity-75"
+                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
               
@@ -344,6 +345,7 @@ export default function RenaxLayout({
                 src={selectedFleet.image}
                 alt={selectedFleet.name}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
               

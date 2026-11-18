@@ -6,9 +6,18 @@ import {defineConfig} from 'vite';
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
-    esbuild: false as const,
     build: {
-      minify: false,
+      minify: 'esbuild',
+      target: 'es2020',
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-maps': ['leaflet', '@vis.gl/react-google-maps'],
+            'vendor-ui': ['lucide-react', 'react-quill-new'],
+          },
+        },
+      },
     },
     resolve: {
       alias: {

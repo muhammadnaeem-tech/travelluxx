@@ -1573,6 +1573,8 @@ app.get("/api/pricing", async (req, res) => {
 });
 
 app.get("/api/settings", async (req, res) => {
+  // Add cache headers so browsers and CDNs can cache for 30s
+  res.setHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
   try {
     await connectToDatabase();
     await syncSettingsFromDb();

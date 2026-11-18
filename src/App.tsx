@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import HeroSection from "./components/HeroSection";
-import BookingCalculator from "./components/BookingCalculator";
-import FleetCatalog from "./components/FleetCatalog";
-import AirportsGrid from "./components/AirportsGrid";
-import ContactForm from "./components/ContactForm";
 import Footer from "./components/Footer";
-import AdminDashboard from "./pages/AdminDashboard";
-import BlogList from "./pages/BlogList";
-import BlogPostDetail from "./pages/BlogPostDetail";
-import DynamicPage from "./pages/DynamicPage";
-import RenaxLayout from "./components/RenaxLayout";
 import { trackVisit, trackClick } from "./utils/analytics";
+
+// Heavy components lazy-loaded so they don't block the initial paint
+const HeroSection = lazy(() => import("./components/HeroSection"));
+const BookingCalculator = lazy(() => import("./components/BookingCalculator"));
+const FleetCatalog = lazy(() => import("./components/FleetCatalog"));
+const AirportsGrid = lazy(() => import("./components/AirportsGrid"));
+const ContactForm = lazy(() => import("./components/ContactForm"));
+const RenaxLayout = lazy(() => import("./components/RenaxLayout"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const BlogList = lazy(() => import("./pages/BlogList"));
+const BlogPostDetail = lazy(() => import("./pages/BlogPostDetail"));
+const DynamicPage = lazy(() => import("./pages/DynamicPage"));
 
 
 
@@ -166,16 +168,18 @@ function PublicLandingPage() {
           settings={settings}
           onUpdateSettings={handleUpdateSettings}
         />
-        <RenaxLayout
-          settings={settings}
-          calculatorPickup={calculatorPickup}
-          calculatorDropoff={calculatorDropoff}
-          setCalculatorPickup={setCalculatorPickup}
-          setCalculatorDropoff={setCalculatorDropoff}
-          handleScrollTo={handleScrollTo}
-          handleSelectTransferPreset={handleSelectTransferPreset}
-          handleSelectClassPreset={handleSelectClassPreset}
-        />
+        <Suspense fallback={<div className="flex-1 bg-[#08090d]" />}>
+          <RenaxLayout
+            settings={settings}
+            calculatorPickup={calculatorPickup}
+            calculatorDropoff={calculatorDropoff}
+            setCalculatorPickup={setCalculatorPickup}
+            setCalculatorDropoff={setCalculatorDropoff}
+            handleScrollTo={handleScrollTo}
+            handleSelectTransferPreset={handleSelectTransferPreset}
+            handleSelectClassPreset={handleSelectClassPreset}
+          />
+        </Suspense>
       </div>
     );
   }
@@ -190,24 +194,34 @@ function PublicLandingPage() {
       />
 
       <main className="flex-grow">
-        <HeroSection 
-          onScrollToCalculator={() => handleScrollTo("calculator-section")} 
-          settings={settings}
-        />
-
-        <div id="calculator-section">
-          <BookingCalculator
-            initialPickup={calculatorPickup}
-            initialDropoff={calculatorDropoff}
+        <Suspense fallback={<div className="min-h-[60vh]" />}>
+          <HeroSection
+            onScrollToCalculator={() => handleScrollTo("calculator-section")}
             settings={settings}
           />
+        </Suspense>
+
+        <div id="calculator-section">
+          <Suspense fallback={<div className="py-16 text-center text-slate-400 text-sm">Loading calculator...</div>}>
+            <BookingCalculator
+              initialPickup={calculatorPickup}
+              initialDropoff={calculatorDropoff}
+              settings={settings}
+            />
+          </Suspense>
         </div>
 
-        <FleetCatalog onSelectClass={handleSelectClassPreset} />
+        <Suspense fallback={null}>
+          <FleetCatalog onSelectClass={handleSelectClassPreset} />
+        </Suspense>
 
-        <AirportsGrid onSelectTransfer={handleSelectTransferPreset} />
+        <Suspense fallback={null}>
+          <AirportsGrid onSelectTransfer={handleSelectTransferPreset} />
+        </Suspense>
 
-        <ContactForm settings={settings} />
+        <Suspense fallback={null}>
+          <ContactForm settings={settings} />
+        </Suspense>
 
         <Footer
           onScrollTo={handleScrollTo}
@@ -235,30 +249,38 @@ function PublicLandingPage() {
   );
 }
 
+const PageFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-[#08090d]">
+    <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
 // MAIN APP ROUTER ENTRY POINT
 export default function App() {
   return (
     <Router>
-      <Routes>
-        {/* PUBLIC HOMEPAGE */}
-        <Route path="/" element={<PublicLandingPage />} />
-        
-        {/* ADMIN DASHBOARD */}
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/:tab" element={<AdminDashboard />} />
-        <Route path="/admin/:tab/:subtab" element={<AdminDashboard />} />
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          {/* PUBLIC HOMEPAGE */}
+          <Route path="/" element={<PublicLandingPage />} />
 
-        {/* BLOG PAGES */}
-        <Route path="/blog" element={<BlogList />} />
-        <Route path="/blog/:slug" element={<BlogPostDetail />} />
+          {/* ADMIN DASHBOARD */}
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/:tab" element={<AdminDashboard />} />
+          <Route path="/admin/:tab/:subtab" element={<AdminDashboard />} />
 
-        {/* DYNAMIC CMS PAGES */}
-        <Route path="/page/:slug" element={<DynamicPage />} />
+          {/* BLOG PAGES */}
+          <Route path="/blog" element={<BlogList />} />
+          <Route path="/blog/:slug" element={<BlogPostDetail />} />
 
-        {/* FALLBACK REDIRECTS TO PUBLIC WEBSITE */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+          {/* DYNAMIC CMS PAGES */}
+          <Route path="/page/:slug" element={<DynamicPage />} />
 
-      </Routes>
+          {/* FALLBACK REDIRECTS TO PUBLIC WEBSITE */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+
+        </Routes>
+      </Suspense>
     </Router>
   );
 }
